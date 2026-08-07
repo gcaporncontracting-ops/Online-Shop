@@ -69,6 +69,37 @@
   </div>
 </footer>
 
+<!-- Cart drawer -->
+<div class="cart-overlay" id="cart-overlay"></div>
+<aside class="cart-drawer" id="cart-drawer" aria-hidden="true">
+  <div class="cart-drawer-header">
+    <h2>Your cart</h2>
+    <button class="cart-close" id="cart-close" aria-label="Close cart">&times;</button>
+  </div>
+  <div class="cart-items" id="cart-items">
+    <!-- Cart line items rendered here -->
+  </div>
+  <div class="cart-footer">
+    <div class="cart-subtotal-row">
+      <span>Subtotal</span>
+      <span id="cart-subtotal">$0.00</span>
+    </div>
+    <button class="btn-primary cart-checkout-btn" id="checkout-btn">Checkout</button>
+  </div>
+</aside>
+
+<!-- Booking modal -->
+<div class="modal-overlay" id="booking-overlay"></div>
+<div class="booking-modal" id="booking-modal" aria-hidden="true">
+  <div class="booking-modal-header">
+    <h2>Book an inspection</h2>
+    <button class="cart-close" id="booking-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="booking-modal-body" id="booking-modal-body">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
 <script src="products.js"></script>
 <script src="app.js"></script>
 </body>

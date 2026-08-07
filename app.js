@@ -1,8 +1,10 @@
 // app.js
-// Renders the product grid from products.js and handles a simple
-// in-memory cart (no payment yet — that comes in Phase 3 with Stripe).
+// Renders the product grid from products.js and handles the cart,
+// including the slide-out cart drawer. Checkout is a placeholder for
+// now — real payment gets wired in during the Stripe phase.
 
-let cart = [];
+// Cart is stored as { productId: quantity }
+let cart = {};
 
 function formatPrice(amount) {
   return amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -33,6 +35,11 @@ function renderProducts() {
           }</span>
           <button class="add-btn" data-id="${product.id}">Add to cart</button>
         </div>
+        ${
+          product.bookable
+            ? `<button class="book-inspection-btn" data-id="${product.id}">Book an inspection</button>`
+            : ""
+        }
       </div>
     `;
 
@@ -57,8 +64,72 @@ function renderGiveaway() {
   `;
 }
 
+function getCartTotalItems() {
+  return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+}
+
+function getCartSubtotal() {
+  return Object.entries(cart).reduce((sum, [id, qty]) => {
+    const product = PRODUCTS.find((p) => p.id === id);
+    return product ? sum + product.price * qty : sum;
+  }, 0);
+}
+
 function updateCartCount() {
-  document.querySelector(".cart-count").textContent = cart.length;
+  document.querySelector(".cart-count").textContent = getCartTotalItems();
+}
+
+function renderCartDrawer() {
+  const itemsEl = document.getElementById("cart-items");
+  const subtotalEl = document.getElementById("cart-subtotal");
+  const entries = Object.entries(cart);
+
+  if (entries.length === 0) {
+    itemsEl.innerHTML = `<p class="cart-empty">Your cart is empty. Go find something good on the shelf.</p>`;
+  } else {
+    itemsEl.innerHTML = entries
+      .map(([id, qty]) => {
+        const product = PRODUCTS.find((p) => p.id === id);
+        if (!product) return "";
+        return `
+          <div class="cart-line" data-id="${id}">
+            <div class="cart-line-photo">
+              ${
+                product.image
+                  ? `<img src="${product.image}" alt="${product.name}">`
+                  : ""
+              }
+            </div>
+            <div class="cart-line-info">
+              <p class="cart-line-name">${product.name}</p>
+              <p class="cart-line-price">${formatPrice(product.price)} each</p>
+              <div class="cart-line-qty">
+                <button class="qty-btn" data-action="decrease" data-id="${id}">&minus;</button>
+                <span>${qty}</span>
+                <button class="qty-btn" data-action="increase" data-id="${id}">&plus;</button>
+                <button class="cart-remove" data-action="remove" data-id="${id}">Remove</button>
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  subtotalEl.textContent = formatPrice(getCartSubtotal());
+}
+
+function openCart() {
+  document.getElementById("cart-drawer").classList.add("open");
+  document.getElementById("cart-overlay").classList.add("open");
+  document.getElementById("cart-drawer").setAttribute("aria-hidden", "false");
+  renderCartDrawer();
+}
+
+function closeCart() {
+  document.getElementById("cart-drawer").classList.remove("open");
+  document.getElementById("cart-overlay").classList.remove("open");
+  document.getElementById("cart-drawer").setAttribute("aria-hidden", "true");
 }
 
 function handleAddToCart(event) {
@@ -66,18 +137,178 @@ function handleAddToCart(event) {
   if (!button) return;
 
   const id = button.dataset.id;
-  const product = PRODUCTS.find((p) => p.id === id);
-  if (!product) return;
-
-  cart.push(product);
+  cart[id] = (cart[id] || 0) + 1;
   updateCartCount();
 
   button.textContent = "Added ✓";
   setTimeout(() => (button.textContent = "Add to cart"), 900);
 }
 
+function handleCartDrawerClick(event) {
+  const target = event.target.closest("button[data-action]");
+  if (!target) return;
+
+  const { action, id } = target.dataset;
+
+  if (action === "increase") {
+    cart[id] = (cart[id] || 0) + 1;
+  } else if (action === "decrease") {
+    cart[id] = Math.max(0, (cart[id] || 0) - 1);
+    if (cart[id] === 0) delete cart[id];
+  } else if (action === "remove") {
+    delete cart[id];
+  }
+
+  updateCartCount();
+  renderCartDrawer();
+}
+
+function handleCheckout() {
+  // Placeholder until Stripe is wired in.
+  alert("Checkout isn't connected yet — payment setup comes next.");
+}
+
+// ---- Inspection booking modal ----
+
+let selectedBookingDate = null;
+
+function openBookingModal(productId) {
+  const product = PRODUCTS.find((p) => p.id === productId);
+  if (!product) return;
+
+  selectedBookingDate = null;
+  document.getElementById("booking-overlay").classList.add("open");
+  document.getElementById("booking-modal").classList.add("open");
+  document.getElementById("booking-modal").setAttribute("aria-hidden", "false");
+
+  const body = document.getElementById("booking-modal-body");
+  body.innerHTML = `<p class="booking-loading">Checking available days for ${product.name}&hellip;</p>`;
+
+  fetch("/api/availability")
+    .then((res) => res.json())
+    .then((data) => renderBookingForm(product, data.busyDates || []))
+    .catch(() => {
+      body.innerHTML = `<p class="booking-error">Couldn't load availability right now. Please try again shortly, or use the chat in the corner.</p>`;
+    });
+}
+
+function renderBookingForm(product, busyDates) {
+  const body = document.getElementById("booking-modal-body");
+  const busySet = new Set(busyDates);
+
+  const days = [];
+  const today = new Date();
+  for (let i = 1; days.length < 14; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const iso = d.toISOString().split("T")[0];
+    if (!busySet.has(iso)) {
+      days.push({
+        iso,
+        label: d.toLocaleDateString("en-AU", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        }),
+      });
+    }
+  }
+
+  body.innerHTML = `
+    <p class="booking-intro">Pick a day for a 10am inspection of the ${product.name}.</p>
+    <div class="booking-day-grid" id="booking-day-grid">
+      ${days
+        .map(
+          (d) =>
+            `<button class="booking-day" data-date="${d.iso}">${d.label}</button>`
+        )
+        .join("")}
+    </div>
+    <div class="booking-email-step" id="booking-email-step" style="display:none;">
+      <label for="booking-email">Your email</label>
+      <input type="email" id="booking-email" placeholder="you@example.com">
+      <button class="btn-primary booking-confirm-btn" id="booking-confirm-btn">Confirm booking</button>
+      <p class="booking-status" id="booking-status"></p>
+    </div>
+  `;
+
+  document.getElementById("booking-day-grid").addEventListener("click", (e) => {
+    const btn = e.target.closest(".booking-day");
+    if (!btn) return;
+
+    document
+      .querySelectorAll(".booking-day")
+      .forEach((el) => el.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedBookingDate = btn.dataset.date;
+
+    document.getElementById("booking-email-step").style.display = "block";
+  });
+
+  document
+    .getElementById("booking-confirm-btn")
+    .addEventListener("click", handleBookingConfirm);
+}
+
+function handleBookingConfirm() {
+  const email = document.getElementById("booking-email").value.trim();
+  const statusEl = document.getElementById("booking-status");
+  const confirmBtn = document.getElementById("booking-confirm-btn");
+
+  if (!selectedBookingDate) {
+    statusEl.textContent = "Please pick a day first.";
+    return;
+  }
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    statusEl.textContent = "Please enter a valid email.";
+    return;
+  }
+
+  confirmBtn.disabled = true;
+  statusEl.textContent = "Booking...";
+
+  fetch("/api/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: selectedBookingDate, email }),
+  })
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (ok && data.success) {
+        document.getElementById("booking-modal-body").innerHTML = `
+          <p class="booking-success">You're booked in for ${selectedBookingDate}. A calendar invite is on its way to ${email}.</p>
+        `;
+      } else {
+        statusEl.textContent = data.error || "Something went wrong. Please try again.";
+        confirmBtn.disabled = false;
+      }
+    })
+    .catch(() => {
+      statusEl.textContent = "Something went wrong. Please try again.";
+      confirmBtn.disabled = false;
+    });
+}
+
+function closeBookingModal() {
+  document.getElementById("booking-overlay").classList.remove("open");
+  document.getElementById("booking-modal").classList.remove("open");
+  document.getElementById("booking-modal").setAttribute("aria-hidden", "true");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts();
   renderGiveaway();
+
   document.getElementById("product-grid").addEventListener("click", handleAddToCart);
+  document.getElementById("product-grid").addEventListener("click", (e) => {
+    const btn = e.target.closest(".book-inspection-btn");
+    if (btn) openBookingModal(btn.dataset.id);
+  });
+  document.getElementById("booking-close").addEventListener("click", closeBookingModal);
+  document.getElementById("booking-overlay").addEventListener("click", closeBookingModal);
+  document.querySelector(".cart-btn").addEventListener("click", openCart);
+  document.getElementById("cart-close").addEventListener("click", closeCart);
+  document.getElementById("cart-overlay").addEventListener("click", closeCart);
+  document.getElementById("cart-items").addEventListener("click", handleCartDrawerClick);
+  document.getElementById("checkout-btn").addEventListener("click", handleCheckout);
 });
