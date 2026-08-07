@@ -15,7 +15,8 @@ export default {
       try {
         return await handleAvailability(env);
       } catch (err) {
-        return new Response(JSON.stringify({ error: "Availability check failed" }), {
+        console.error("availability error:", err.message, err.stack);
+        return new Response(JSON.stringify({ error: err.message || "Availability check failed" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
@@ -26,7 +27,8 @@ export default {
       try {
         return await handleBook(request, env);
       } catch (err) {
-        return new Response(JSON.stringify({ error: "Booking failed" }), {
+        console.error("booking error:", err.message, err.stack);
+        return new Response(JSON.stringify({ error: err.message || "Booking failed" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
@@ -37,7 +39,8 @@ export default {
       try {
         return await handleChat(request, env);
       } catch (err) {
-        return new Response(JSON.stringify({ error: "Chat failed" }), {
+        console.error("chat error:", err.message, err.stack);
+        return new Response(JSON.stringify({ error: err.message || "Chat failed" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
