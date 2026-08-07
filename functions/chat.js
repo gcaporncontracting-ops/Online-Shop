@@ -43,7 +43,8 @@ export async function handleChat(request, env) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    return jsonError("Chat is temporarily unavailable — try again shortly.", 500);
+    console.error("Workers AI error:", err.message, err.stack);
+    return jsonError(`AI error: ${err.message}`, 500);
   }
 }
 
