@@ -185,8 +185,16 @@ function openBookingModal(productId) {
   body.innerHTML = `<p class="booking-loading">Checking available days for ${product.name}&hellip;</p>`;
 
   fetch("/api/availability")
-    .then((res) => res.json())
-    .then((data) => renderBookingForm(product, data.busyDates || []))
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        body.innerHTML = `<p class="booking-error">Couldn't verify calendar availability right now (${
+          data.error || "unknown error"
+        }). Please use the chat in the corner to arrange a time instead — don't want to risk double-booking you.</p>`;
+        return;
+      }
+      renderBookingForm(product, data.busyDates || []);
+    })
     .catch(() => {
       body.innerHTML = `<p class="booking-error">Couldn't load availability right now. Please try again shortly, or use the chat in the corner.</p>`;
     });
@@ -276,9 +284,10 @@ function handleBookingConfirm() {
     .then(({ ok, data }) => {
       if (ok && data.success) {
         document.getElementById("booking-modal-body").innerHTML = `
-          <p class="booking-success">You're booked in for ${selectedBookingDate}. A calendar invite is on its way to ${email}.</p>
+          <p class="booking-success">You're booked in for ${selectedBookingDate} at 10am. We've got your email (${email}) on file and will be in touch if anything changes.</p>
         `;
       } else {
+        console.error("Booking error detail:", data.error);
         statusEl.textContent = data.error || "Something went wrong. Please try again.";
         confirmBtn.disabled = false;
       }
