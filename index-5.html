@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browers & Winkles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/">
+      <span class="brand-mark">B&amp;W</span>
+      <span class="brand-name">Browers <em>&amp;</em> Winkles</span>
+    </a>
+    <nav class="main-nav">
+      <a href="#shop">Shop</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="cart-btn" aria-label="View cart">
+      <span class="cart-count">0</span> Cart
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <p class="eyebrow">Est. this year &mdash; one shop, one shelf at a time</p>
+    <h1>Good things,<br>previously loved,<br><span class="hero-accent">still worth having.</span></h1>
+    <p class="hero-sub">Every item here has a story before it gets to you. Browse what's currently on the shelf.</p>
+    <a href="#shop" class="btn-primary">Browse the shelf &rarr;</a>
+  </div>
+</section>
+
+<main id="shop" class="wrap shop-section">
+  <div class="section-heading">
+    <h2>On the shelf</h2>
+    <p>New finds added as they come in.</p>
+  </div>
+
+  <div class="product-grid" id="product-grid">
+    <!-- Product cards are generated from products.js -->
+  </div>
+</main>
+
+<section id="about" class="about-section">
+  <div class="wrap about-inner">
+    <h2>What this is</h2>
+    <p>Browers &amp; Winkles is a small storefront for things worth passing on &mdash; sourced, checked over, and listed here so they're easy to find and easy to buy. No digging through group chats, no "is this still available?" &mdash; just add to cart.</p>
+  </div>
+</section>
+
+<footer id="contact" class="site-footer">
+  <div class="wrap footer-inner">
+    <div>
+      <span class="brand-mark small">B&amp;W</span>
+      <p>Browers &amp; Winkles</p>
+    </div>
+    <p class="footer-note">Questions about an item? Use the chat in the corner.</p>
+  </div>
+</footer>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
