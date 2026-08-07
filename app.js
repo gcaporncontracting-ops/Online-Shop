@@ -28,7 +28,9 @@ function renderProducts() {
         <h3 class="product-name">${product.name}</h3>
         <p class="product-desc">${product.description}</p>
         <div class="product-footer">
-          <span class="price-tag">${formatPrice(product.price)}</span>
+          <span class="price-tag">${formatPrice(product.price)}${
+            product.priceNote ? ` <em>${product.priceNote}</em>` : ""
+          }</span>
           <button class="add-btn" data-id="${product.id}">Add to cart</button>
         </div>
       </div>
@@ -36,6 +38,23 @@ function renderProducts() {
 
     grid.appendChild(card);
   });
+}
+
+function renderGiveaway() {
+  const banner = document.getElementById("giveaway-banner");
+  if (!banner || typeof GIVEAWAY === "undefined") return;
+
+  banner.innerHTML = `
+    <div class="giveaway-photo">
+      <img src="${GIVEAWAY.image}" alt="${GIVEAWAY.name}">
+    </div>
+    <div class="giveaway-info">
+      <span class="giveaway-label">This month's giveaway</span>
+      <h3>${GIVEAWAY.name}</h3>
+      <p>${GIVEAWAY.description}</p>
+      <p class="giveaway-fine-print">One winner drawn at random. No purchase necessary to enter — message us via chat to enter free.</p>
+    </div>
+  `;
 }
 
 function updateCartCount() {
@@ -59,5 +78,6 @@ function handleAddToCart(event) {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts();
+  renderGiveaway();
   document.getElementById("product-grid").addEventListener("click", handleAddToCart);
 });
