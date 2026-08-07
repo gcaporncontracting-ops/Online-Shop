@@ -295,6 +295,68 @@ function closeBookingModal() {
   document.getElementById("booking-modal").setAttribute("aria-hidden", "true");
 }
 
+// ---- Chat widget ----
+
+let chatHistory = [];
+let chatBusy = false;
+
+function openChat() {
+  document.getElementById("chat-panel").classList.add("open");
+  document.getElementById("chat-panel").setAttribute("aria-hidden", "false");
+  document.getElementById("chat-input").focus();
+}
+
+function closeChat() {
+  document.getElementById("chat-panel").classList.remove("open");
+  document.getElementById("chat-panel").setAttribute("aria-hidden", "true");
+}
+
+function appendChatMessage(text, sender) {
+  const messagesEl = document.getElementById("chat-messages");
+  const msg = document.createElement("div");
+  msg.className = `chat-msg chat-msg-${sender}`;
+  msg.textContent = text;
+  messagesEl.appendChild(msg);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return msg;
+}
+
+function handleChatSubmit(event) {
+  event.preventDefault();
+  if (chatBusy) return;
+
+  const input = document.getElementById("chat-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  appendChatMessage(message, "user");
+  input.value = "";
+  chatBusy = true;
+
+  const thinkingMsg = appendChatMessage("...", "bot");
+
+  fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, history: chatHistory }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      thinkingMsg.remove();
+      const reply = data.reply || data.error || "Sorry, something went wrong.";
+      appendChatMessage(reply, "bot");
+      chatHistory.push({ role: "user", content: message });
+      chatHistory.push({ role: "assistant", content: reply });
+    })
+    .catch(() => {
+      thinkingMsg.remove();
+      appendChatMessage("Sorry, something went wrong. Please try again.", "bot");
+    })
+    .finally(() => {
+      chatBusy = false;
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts();
   renderGiveaway();
@@ -307,6 +369,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("booking-close").addEventListener("click", closeBookingModal);
   document.getElementById("booking-overlay").addEventListener("click", closeBookingModal);
   document.querySelector(".cart-btn").addEventListener("click", openCart);
+  document.getElementById("chat-bubble").addEventListener("click", openChat);
+  document.getElementById("chat-close").addEventListener("click", closeChat);
+  document.getElementById("chat-form").addEventListener("submit", handleChatSubmit);
   document.getElementById("cart-close").addEventListener("click", closeCart);
   document.getElementById("cart-overlay").addEventListener("click", closeCart);
   document.getElementById("cart-items").addEventListener("click", handleCartDrawerClick);

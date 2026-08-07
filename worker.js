@@ -5,6 +5,7 @@
 
 import { handleAvailability } from "./functions/availability.js";
 import { handleBook } from "./functions/book.js";
+import { handleChat } from "./functions/chat.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -26,6 +27,17 @@ export default {
         return await handleBook(request, env);
       } catch (err) {
         return new Response(JSON.stringify({ error: "Booking failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (url.pathname === "/api/chat" && request.method === "POST") {
+      try {
+        return await handleChat(request, env);
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Chat failed" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
