@@ -7,7 +7,7 @@
 let cart = {};
 
 function formatPrice(amount) {
-  return amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  return amount.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
 
 function renderProducts() {
@@ -164,8 +164,43 @@ function handleCartDrawerClick(event) {
 }
 
 function handleCheckout() {
-  // Placeholder until Stripe is wired in.
-  alert("Checkout isn't connected yet — payment setup comes next.");
+  if (Object.keys(cart).length === 0) return;
+
+  const btn = document.getElementById("checkout-btn");
+  btn.disabled = true;
+  btn.textContent = "Redirecting to payment...";
+
+  fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cart }),
+  })
+    .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        showCheckoutBanner(data.error || "Could not start checkout. Please try again.", "error");
+        btn.disabled = false;
+        btn.textContent = "Checkout";
+      }
+    })
+    .catch(() => {
+      showCheckoutBanner("Could not start checkout. Please try again.", "error");
+      btn.disabled = false;
+      btn.textContent = "Checkout";
+    });
+}
+
+function showCheckoutBanner(message, type) {
+  const existing = document.querySelector(".checkout-banner");
+  if (existing) existing.remove();
+
+  const banner = document.createElement("div");
+  banner.className = `checkout-banner checkout-banner-${type}`;
+  banner.textContent = message;
+  document.body.insertBefore(banner, document.body.firstChild);
+  setTimeout(() => banner.remove(), 9000);
 }
 
 // ---- Inspection booking modal ----
@@ -369,6 +404,17 @@ function handleChatSubmit(event) {
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts();
   renderGiveaway();
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("checkout") === "success") {
+    cart = {};
+    updateCartCount();
+    showCheckoutBanner("Thanks for your order! We'll be in touch to confirm details and arrange shipping.", "success");
+    window.history.replaceState({}, "", window.location.pathname);
+  } else if (params.get("checkout") === "cancelled") {
+    showCheckoutBanner("Checkout was cancelled — your cart is still saved.", "cancelled");
+    window.history.replaceState({}, "", window.location.pathname);
+  }
 
   document.getElementById("product-grid").addEventListener("click", handleAddToCart);
   document.getElementById("product-grid").addEventListener("click", (e) => {

@@ -300,6 +300,35 @@ a { color: inherit; }
 }
 .book-inspection-btn:hover { background: var(--green); color: var(--cream-light); }
 
+/* ---- Checkout banner ---- */
+.checkout-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  text-align: center;
+  padding: 14px 20px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--cream-light);
+  animation: slideDown 0.25s ease;
+}
+
+.checkout-banner-success { background: var(--green); }
+.checkout-banner-cancelled { background: var(--rust); }
+.checkout-banner-error { background: var(--rust-dark); }
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-banner { animation: none; }
+}
+
 /* ---- Chat widget ---- */
 .chat-bubble {
   position: fixed;

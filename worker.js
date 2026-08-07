@@ -6,6 +6,7 @@
 import { handleAvailability } from "./functions/availability.js";
 import { handleBook } from "./functions/book.js";
 import { handleChat } from "./functions/chat.js";
+import { handleCheckout } from "./functions/checkout.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -41,6 +42,18 @@ export default {
       } catch (err) {
         console.error("chat error:", err.message, err.stack);
         return new Response(JSON.stringify({ error: err.message || "Chat failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (url.pathname === "/api/checkout" && request.method === "POST") {
+      try {
+        return await handleCheckout(request, env);
+      } catch (err) {
+        console.error("checkout error:", err.message, err.stack);
+        return new Response(JSON.stringify({ error: err.message || "Checkout failed" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
