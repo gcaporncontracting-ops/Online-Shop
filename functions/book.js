@@ -52,7 +52,7 @@ export async function handleBook(request, env) {
   const eventRes = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
       env.GOOGLE_CALENDAR_ID
-    )}/events?sendUpdates=all`,
+    )}/events`,
     {
       method: "POST",
       headers: {
@@ -60,17 +60,17 @@ export async function handleBook(request, env) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        summary: "Unimog inspection booking",
+        summary: `Unimog inspection — ${email}`,
         description: `Booked via the Browers & Winkles website.\nVisitor email: ${email}`,
         start: { dateTime: `${date}T10:00:00${OFFSET}`, timeZone: "Australia/Perth" },
         end: { dateTime: `${date}T11:00:00${OFFSET}`, timeZone: "Australia/Perth" },
-        attendees: [{ email }],
       }),
     }
   );
 
   if (!eventRes.ok) {
-    return jsonError("Could not create the booking. Try again shortly.", 500);
+    const errBody = await eventRes.text();
+    throw new Error(`Google Calendar event creation failed: ${errBody}`);
   }
 
   return new Response(JSON.stringify({ success: true }), {
